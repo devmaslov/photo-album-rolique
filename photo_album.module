@@ -1,0 +1,107 @@
+<?php
+
+use Drupal\photo_album\Entity\Photo;
+use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
+use Drupal\Core\Url;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Component\Serialization\Json;
+
+/**
+ * Implements hook_entity_extra_field_info().
+ */
+function photo_album_entity_extra_field_info() {
+  $extra['photo']['photo']['display']['rate'] = [
+    'label' => t('Rate the photo'),
+    'description' => t('Allows other users to rate the photo.'),
+    'weight' => 20,
+    'visible' => TRUE,
+  ];
+
+  $extra['photo']['photo']['display']['average_rating'] = [
+    'label' => t('Average rating'),
+    'description' => t('Shows average rating for the photo.'),
+    'weight' => 10,
+    'visible' => TRUE,
+  ];
+
+  $extra['photo']['photo']['display']['delete'] = [
+    'label' => t('Delete photo'),
+    'description' => t('Link for deleting photo.'),
+    'weight' => 20,
+    'visible' => TRUE,
+  ];
+
+  return $extra;
+}
+
+/**
+ * Implements hook_photo_view().
+ */
+function photo_album_photo_view(array &$build, Photo $photo, EntityViewDisplayInterface $display, $view_mode) {
+  $current_user = \Drupal::currentUser();
+  if ($display->getComponent('rate') && !$current_user->isAnonymous() && $current_user->id() != $photo->getOwnerId() && $view_mode == 'full') {
+    $build['rate'] = \Drupal::formBuilder()->getForm('\Drupal\photo_album\Form\PhotoRateForm', $photo);
+  }
+
+  if ($display->getComponent('average_rating')) {
+    if ($photo->getRatesAmount() == 0) {
+      $message = t('No rating yet');
+    }
+    else {
+      $message = t('@average_rating (total rates: @total_rates)', ['@average_rating' => $photo->getAverageRating(), '@total_rates' => $photo->getRatesAmount()]);
+    }
+
+    $build['average_rating'] = [
+      '#type' => 'item',
+      '#title' => t('Average rating:'),
+      '#markup' => $message,
+    ];
+  }
+
+  if ($display->getComponent('delete') && $current_user->hasPermission('delete own photo entities') && $photo ->getOwnerId() == $current_user->id()) {
+    $build['delete'] = [
+      '#type' => 'link',
+      '#title' => t('Delete'),
+      '#url' => Url::fromRoute('entity.photo.delete_form', ['photo' => $photo->id()], ['query' => ['destination' => 'user/' . $photo->getOwnerId()]]),
+      '#attributes' => [
+        'class' => ['button'],
+      ],
+      '#prefix' => '<div class="form-actions delete-photo">',
+      '#suffix' => '</div>',
+    ];
+  }
+}
+
+/**
+ * Implements hook_form_views_exposed_form_alter().
+ */
+function photo_album_form_views_exposed_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  /** @var \Drupal\views\ViewExecutable $view */
+  $view = $form_state->get('view');
+  if ($view->id() != 'photo_album' || $view->current_display != 'photo_album_block') {
+    return;
+  }
+
+  $photo_album_owner_id = \Drupal::routeMatch()->getRawParameter('user');
+  if (!$photo_album_owner_id && isset($view->args[0])) {
+    $photo_album_owner_id = $view->args[0];
+  }
+  $current_user = \Drupal::currentUser();
+
+  $form['actions']['add_photo'] = [
+    '#type' => 'link',
+    '#title' => t('Add a new photo'),
+    '#url' => Url::fromRoute('photo_album.photo_add', [], ['query' => ['destination' => 'user/' . $current_user->id()]]),
+    '#attributes' => [
+      'class' => ['button use-ajax'],
+      'data-dialog-type' => 'modal',
+      'data-dialog-options' => Json::encode([
+        'width' => 700,
+      ]),
+    ],
+    '#attached' => [
+      'library' => ['core/drupal.dialog.ajax'],
+    ],
+    '#access' => $current_user->hasPermission('add photo entities') && $photo_album_owner_id == $current_user->id(),
+  ];
+}

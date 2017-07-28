@@ -1,0 +1,65 @@
+<?php
+
+use Drupal\user\Entity\Role;
+
+/**
+ * Implements hook_schema().
+ */
+function photo_album_schema() {
+  $schema['photo_album_rate'] = [
+    'description' => 'Photo rating storage.',
+    'fields' => [
+      'rid' => [
+        'description' => 'Rate ID',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+      'uid' => [
+        'description' => 'User ID who rated the photo.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+      ],
+      'pid' => [
+        'description' => 'Photo ID which was rated.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+      ],
+      'rate' => [
+        'description' => 'Photo rate from 1 to 5.',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+      ],
+    ],
+    'indexes' => [
+      'pid' => ['pid'],
+    ],
+    'unique keys' => [
+      'user_rate' => ['uid', 'pid'],
+    ],
+    'primary key' => ['rid'],
+  ];
+
+  return $schema;
+}
+
+/**
+ * Implements hook_install().
+ */
+function photo_album_install() {
+  $authenticated_role = Role::load('authenticated');
+  $authenticated_role->grantPermission('view photo entities');
+  $authenticated_role->grantPermission('delete own photo entities');
+  $authenticated_role->grantPermission('add photo entities');
+  $authenticated_role->grantPermission('access user profiles');
+  $authenticated_role->save();
+
+  $anonymous_role = Role::load('anonymous');
+  $anonymous_role->grantPermission('view photo entities');
+  $anonymous_role->grantPermission('access user profiles');
+  $anonymous_role->save();
+}

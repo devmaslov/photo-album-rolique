@@ -1,0 +1,11 @@
+name: Photo album
+type: module
+description: Allows users to manage own photo album
+core: 8.x
+package: Other
+dependencies:
+  - block
+  - system
+  - user
+  - views
+  - features

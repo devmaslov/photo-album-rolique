@@ -1,0 +1,19 @@
+add photo entities:
+  title: 'Create new Photo entities'
+
+administer photo entities:
+  title: 'Administer Photo entities'
+  description: 'Allow to access the administration form to configure Photo entities.'
+  restrict access: true
+
+edit photo entities:
+  title: 'Edit Photo entities'
+
+delete photo entities:
+  title: 'Delete Photo entities'
+
+delete own photo entities:
+  title: 'Delete own Photo entities'
+
+view photo entities:
+  title: 'View Photo entities'

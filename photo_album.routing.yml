@@ -1,0 +1,23 @@
+entity.photo.canonical:
+  path: '/photo/{photo}'
+  defaults:
+    _entity_view: 'photo'
+    _title: 'Photo'
+  requirements:
+    _entity_access: 'photo.view'
+
+photo_album.photo_add:
+  path: '/photo/add'
+  defaults:
+    _entity_form: photo.add
+    _title: 'Add Photo'
+  requirements:
+    _entity_create_access: 'photo'
+
+entity.photo.delete_form:
+  path: '/photo/{photo}/delete'
+  defaults:
+    _entity_form: photo.delete
+    _title: 'Delete Photo'
+  requirements:
+    _entity_access: 'photo.delete'
